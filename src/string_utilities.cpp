@@ -18,16 +18,13 @@
      USA
 */
 
+#include "httpserver/string_utilities.hpp"
+
 #include <algorithm>
-#include <string>
-#include <istream>
-#include <sstream>
-#include <vector>
 #include <cctype>
-#include <cstdlib>
-#include <cstring>
-#include <regex.h>
-#include "string_utilities.hpp"
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace httpserver
 {
@@ -81,44 +78,6 @@ const std::vector<std::string> string_split(
         if((collapse && token != "") || !collapse)
             result.push_back(token);
     }
-    return result;
-}
-
-const std::string regex_replace(const std::string& str,
-        const std::string& pattern,
-        const std::string& replace_str
-)
-{
-    regex_t preg;
-    regmatch_t substmatch[1];
-    regcomp(&preg, pattern.c_str(), REG_EXTENDED|REG_ICASE);
-    std::string result;
-    if ( regexec(&preg, str.c_str(), 1, substmatch, 0) == 0 )
-    {
-        char ns[substmatch[0].rm_so + 1 +
-            replace_str.size() + (str.size() - substmatch[0].rm_eo) + 2
-        ];
-
-        memcpy(ns, str.c_str(), substmatch[0].rm_so+1);
-
-        memcpy(&ns[substmatch[0].rm_so],
-                replace_str.c_str(),
-                replace_str.size()
-        );
-
-        memcpy(&ns[substmatch[0].rm_so+replace_str.size()],
-                &str[substmatch[0].rm_eo], str.substr(substmatch[0].rm_eo).size()
-        );
-
-        ns[substmatch[0].rm_so +
-            replace_str.size() +
-            str.substr(substmatch[0].rm_eo).size()
-        ] = 0;
-
-        result = std::string((char*)ns);
-    }
-    regfree(&preg);
-
     return result;
 }
 

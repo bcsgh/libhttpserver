@@ -18,11 +18,16 @@
      USA
 */
 
-#include "littletest.hpp"
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+#define _WINDOWS
+#endif
+
 #include <curl/curl.h>
-#include <string>
 #include <map>
+#include <string>
+
 #include "httpserver.hpp"
+#include "littletest.hpp"
 
 using namespace httpserver;
 using namespace std;
@@ -38,22 +43,29 @@ class ok_resource : public http_resource
 
 LT_BEGIN_SUITE(threaded_suite)
 
+#ifndef _WINDOWS
     webserver* ws;
+#endif
 
     void set_up()
     {
+#ifndef _WINDOWS
         ws = new webserver(create_webserver(8080).start_method(http::http_utils::INTERNAL_SELECT).max_threads(5));
         ws->start(false);
+#endif
     }
 
     void tear_down()
     {
+#ifndef _WINDOWS
         ws->stop();
         delete ws;
+#endif
     }
 LT_END_SUITE(threaded_suite)
 
 LT_BEGIN_AUTO_TEST(threaded_suite, base)
+#ifndef _WINDOWS
     ok_resource resource;
     ws->register_resource("base", &resource);
     curl_global_init(CURL_GLOBAL_ALL);
@@ -67,6 +79,7 @@ LT_BEGIN_AUTO_TEST(threaded_suite, base)
     res = curl_easy_perform(curl);
     LT_ASSERT_EQ(res, 0);
     curl_easy_cleanup(curl);
+#endif
 LT_END_AUTO_TEST(base)
 
 LT_BEGIN_AUTO_TEST_ENV()

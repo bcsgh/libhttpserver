@@ -18,7 +18,7 @@
      USA
 */
 
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #define _WINDOWS
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x600
@@ -26,14 +26,16 @@
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
-#endif
-
-#include "littletest.hpp"
-#include <curl/curl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include "httpserver.hpp"
+#endif
+
+#include <curl/curl.h>
 #include <pthread.h>
+#include <unistd.h>
+
+#include "httpserver.hpp"
+#include "littletest.hpp"
 
 using namespace std;
 using namespace httpserver;
@@ -72,6 +74,8 @@ LT_BEGIN_SUITE(ws_start_stop_suite)
     {
     }
 LT_END_SUITE(ws_start_stop_suite)
+
+#ifndef _WINDOWS
 
 LT_BEGIN_AUTO_TEST(ws_start_stop_suite, start_stop)
     {
@@ -141,6 +145,59 @@ LT_BEGIN_AUTO_TEST(ws_start_stop_suite, start_stop)
     }
 LT_END_AUTO_TEST(start_stop)
 
+#if defined(IPV6_TESTS_ENABLED)
+
+LT_BEGIN_AUTO_TEST(ws_start_stop_suite, ipv6)
+    {
+    webserver ws = create_webserver(8080).use_ipv6();
+    ok_resource ok;
+    ws.register_resource("base", &ok);
+    ws.start(false);
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    std::string s;
+    CURL *curl = curl_easy_init();
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/base");
+    curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+    res = curl_easy_perform(curl);
+    LT_ASSERT_EQ(res, 0);
+    LT_CHECK_EQ(s, "OK");
+    curl_easy_cleanup(curl);
+
+    ws.stop();
+    }
+LT_END_AUTO_TEST(ipv6)
+
+LT_BEGIN_AUTO_TEST(ws_start_stop_suite, dual_stack)
+    {
+    webserver ws = create_webserver(8080).use_dual_stack();
+    ok_resource ok;
+    ws.register_resource("base", &ok);
+    ws.start(false);
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    std::string s;
+    CURL *curl = curl_easy_init();
+    CURLcode res;
+    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/base");
+    curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V6);
+    curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writefunc);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &s);
+    res = curl_easy_perform(curl);
+    LT_ASSERT_EQ(res, 0);
+    LT_CHECK_EQ(s, "OK");
+    curl_easy_cleanup(curl);
+
+    ws.stop();
+    }
+LT_END_AUTO_TEST(dual_stack)
+
+#endif
 
 LT_BEGIN_AUTO_TEST(ws_start_stop_suite, sweet_kill)
     webserver ws = create_webserver(8080);
@@ -546,6 +603,8 @@ LT_BEGIN_AUTO_TEST(ws_start_stop_suite, custom_error_resources)
 
     ws.stop();
 LT_END_AUTO_TEST(custom_error_resources)
+
+#endif
 
 LT_BEGIN_AUTO_TEST_ENV()
     AUTORUN_TESTS()

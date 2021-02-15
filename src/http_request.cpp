@@ -19,10 +19,12 @@
 
 */
 
-#include "http_utils.hpp"
-#include "http_request.hpp"
-#include "string_utilities.hpp"
+#include "httpserver/http_request.hpp"
+#include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
+#include "httpserver/http_utils.hpp"
+#include "httpserver/string_utilities.hpp"
 
 using namespace std;
 
@@ -86,7 +88,7 @@ const std::string http_request::get_connection_value(const std::string& key, enu
     return header_c;
 }
 
-int http_request::build_request_header(
+MHD_Result http_request::build_request_header(
         void *cls,
         enum MHD_ValueKind kind,
         const char *key,
@@ -187,7 +189,7 @@ const std::string http_request::get_querystring() const
     return querystring;
 }
 
-int http_request::build_request_args(
+MHD_Result http_request::build_request_args(
         void *cls,
         enum MHD_ValueKind kind,
         const char *key,
@@ -202,7 +204,7 @@ int http_request::build_request_args(
     return MHD_YES;
 }
 
-int http_request::build_request_querystring(
+MHD_Result http_request::build_request_querystring(
         void *cls,
         enum MHD_ValueKind kind,
         const char *key,

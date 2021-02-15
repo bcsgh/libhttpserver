@@ -18,32 +18,49 @@
      USA
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
-#define _WINDOWS
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x600
+#include "httpserver/http_utils.hpp"
+
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#else
-#include <sys/socket.h>
-#include <netdb.h>
+#else // WIN32 check
 #include <arpa/inet.h>
-#endif
-#include <sstream>
-#include <iomanip>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#endif // WIN32 check
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <fstream>
-#include <iostream>
+#include <iomanip>
+#include <iterator>
+#include <memory>
+#include <sstream>
 #include <stdexcept>
-#include "string_utilities.hpp"
-#include "http_utils.hpp"
+#include <utility>
+
+#include "httpserver/string_utilities.hpp"
 
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 #define SET_BIT(var,pos) ((var) |= 1 << (pos))
 #define CLEAR_BIT(var,pos) ((var) &= ~(1<<(pos)))
+
+#if defined (__CYGWIN__)
+
+#if ! defined (NI_MAXHOST)
+#define NI_MAXHOST 1025
+#endif // NI_MAXHOST
+
+#ifndef __u_char_defined
+typedef unsigned char u_char;
+#define __u_char_defined
+#endif // __u_char_defined
+
+#endif // CYGWIN
 
 using namespace std;
 
@@ -288,12 +305,13 @@ size_t http_unescape(std::string& val)
 {
     if (val.empty()) return 0;
 
-    int rpos = 0;
-    int wpos = 0;
+    unsigned int rpos = 0;
+    unsigned int wpos = 0;
 
     unsigned int num;
+    unsigned int size = val.size();
 
-    while ('\0' != val[rpos])
+    while (rpos < size && val[rpos] != '\0')
     {
         switch (val[rpos])
         {
@@ -303,8 +321,8 @@ size_t http_unescape(std::string& val)
                 rpos++;
                 break;
             case '%':
-                if ( (1 == sscanf (val.substr(rpos + 1).c_str(), "%2x", &num)) ||
-                    (1 == sscanf (val.substr(rpos + 1).c_str(), "%2X", &num))
+                if (size > rpos + 2 && ((1 == sscanf (val.substr(rpos + 1, 2).c_str(), "%2x", &num)) ||
+                    (1 == sscanf (val.substr(rpos + 1, 2).c_str(), "%2X", &num)))
                 )
                 {
                     val[wpos] = (unsigned char) num;

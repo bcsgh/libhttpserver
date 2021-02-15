@@ -18,7 +18,7 @@
      USA
 */
 
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #define _WINDOWS
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x600
@@ -26,15 +26,16 @@
 #include <ws2tcpip.h>
 #else
 #include <arpa/inet.h>
-#endif
-
-#include "littletest.hpp"
-#include <curl/curl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include "httpserver.hpp"
-#include <unistd.h>
+#endif
+
+#include <curl/curl.h>
 #include <signal.h>
+#include <unistd.h>
+
+#include "httpserver.hpp"
+#include "littletest.hpp"
 
 using namespace std;
 using namespace httpserver;

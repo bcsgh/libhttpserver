@@ -18,49 +18,56 @@
      USA
 */
 
-#include <stdint.h>
-#include <inttypes.h>
-#include <iostream>
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <stdexcept>
+#include "httpserver/webserver.hpp"
 
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
+#if defined(_WIN32) && ! defined(__CYGWIN__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #define _WINDOWS
 #else
-#include <netinet/ip.h>
+#if defined(__FreeBSD__)
+#include <netinet/in.h>
+#endif
+#if defined(__CYGWIN__)
+#include <sys/select.h>
+#endif
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #endif
 
-#include <signal.h>
-#include <fcntl.h>
-#include <algorithm>
-
+#include <errno.h>
 #include <microhttpd.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstring>
+#include <exception>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 #include "gettext.h"
-#include "http_utils.hpp"
-#include "http_resource.hpp"
-#include "http_response.hpp"
-#include "string_response.hpp"
-#include "http_request.hpp"
-#include "details/http_endpoint.hpp"
-#include "string_utilities.hpp"
-#include "create_webserver.hpp"
-#include "webserver.hpp"
-#include "details/modded_request.hpp"
+#include "httpserver/create_webserver.hpp"
+#include "httpserver/details/http_endpoint.hpp"
+#include "httpserver/details/modded_request.hpp"
+#include "httpserver/http_request.hpp"
+#include "httpserver/http_resource.hpp"
+#include "httpserver/http_response.hpp"
+#include "httpserver/http_utils.hpp"
+#include "httpserver/string_response.hpp"
+
+struct MHD_Connection;
 
 #define _REENTRANT 1
 
 #ifndef SOCK_CLOEXEC
 #define SOCK_CLOEXEC 02000000
+#endif
+
+#if MHD_VERSION < 0x00097002
+typedef int MHD_Result;
 #endif
 
 using namespace std;
@@ -70,7 +77,7 @@ namespace httpserver
 
 using namespace http;
 
-int policy_callback (void *, const struct sockaddr*, socklen_t);
+MHD_Result policy_callback (void *, const struct sockaddr*, socklen_t);
 void error_log(void*, const char*, va_list);
 void* uri_log(void*, const char*);
 void access_log(webserver*, string);
@@ -86,7 +93,7 @@ struct compare_value
     }
 };
 
-#ifndef __MINGW32__
+#if !defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
 static void catcher (int sig)
 {
 }
@@ -95,7 +102,7 @@ static void catcher (int sig)
 static void ignore_sigpipe ()
 {
 //Mingw doesn't implement SIGPIPE
-#ifndef __MINGW32__
+#if !defined(_WIN32) && !defined(__MINGW32__) && !defined(__CYGWIN__)
     struct sigaction oldsig;
     struct sigaction sig;
 
@@ -133,6 +140,7 @@ webserver::webserver(const create_webserver& params):
     max_thread_stack_size(params._max_thread_stack_size),
     use_ssl(params._use_ssl),
     use_ipv6(params._use_ipv6),
+    use_dual_stack(params._use_dual_stack),
     debug(params._debug),
     pedantic(params._pedantic),
     https_mem_key(params._https_mem_key),
@@ -158,7 +166,6 @@ webserver::webserver(const create_webserver& params):
 {
     ignore_sigpipe();
     pthread_mutex_init(&mutexwait, NULL);
-    pthread_rwlock_init(&runguard, NULL);
     pthread_cond_init(&mutexcond, NULL);
 }
 
@@ -166,7 +173,6 @@ webserver::~webserver()
 {
     stop();
     pthread_mutex_destroy(&mutexwait);
-    pthread_rwlock_destroy(&runguard);
     pthread_cond_destroy(&mutexcond);
 }
 
@@ -297,6 +303,8 @@ bool webserver::start(bool blocking)
         start_conf |= MHD_USE_SSL;
     if(use_ipv6)
         start_conf |= MHD_USE_IPv6;
+    if(use_dual_stack)
+        start_conf |= MHD_USE_DUAL_STACK;
     if(debug)
         start_conf |= MHD_USE_DEBUG;
     if(pedantic)
@@ -368,7 +376,8 @@ bool webserver::stop()
 
 void webserver::unregister_resource(const string& resource)
 {
-    details::http_endpoint he(resource);
+    // family does not matter - it just checks the url_normalized anyhow
+    details::http_endpoint he(resource, false, true, regex_checking);
     registered_resources.erase(he);
     registered_resources.erase(he.get_url_complete());
     registered_resources_str.erase(he.get_url_complete());
@@ -410,7 +419,7 @@ void webserver::disallow_ip(const string& ip)
     allowances.erase(ip);
 }
 
-int policy_callback (void *cls, const struct sockaddr* addr, socklen_t addrlen)
+MHD_Result policy_callback (void *cls, const struct sockaddr* addr, socklen_t addrlen)
 {
     if(!(static_cast<webserver*>(cls))->ban_system_enabled) return MHD_YES;
 
@@ -457,7 +466,7 @@ size_t unescaper_func(void * cls, struct MHD_Connection *c, char *s)
     return std::string(s).size();
 }
 
-int webserver::post_iterator (void *cls, enum MHD_ValueKind kind,
+MHD_Result webserver::post_iterator (void *cls, enum MHD_ValueKind kind,
     const char *key,
     const char *filename,
     const char *content_type,
@@ -511,7 +520,7 @@ const std::shared_ptr<http_response> webserver::internal_error_page(details::mod
     }
 }
 
-int webserver::requests_answer_first_step(
+MHD_Result webserver::requests_answer_first_step(
         MHD_Connection* connection,
         struct details::modded_request* mr
 )
@@ -563,7 +572,7 @@ int webserver::requests_answer_first_step(
     return MHD_YES;
 }
 
-int webserver::requests_answer_second_step(
+MHD_Result webserver::requests_answer_second_step(
     MHD_Connection* connection, const char* method,
     const char* version, const char* upload_data,
     size_t* upload_data_size, struct details::modded_request* mr
@@ -586,7 +595,7 @@ int webserver::requests_answer_second_step(
     return MHD_YES;
 }
 
-int webserver::finalize_answer(
+MHD_Result webserver::finalize_answer(
         MHD_Connection* connection,
         struct details::modded_request* mr,
         const char* method
@@ -611,7 +620,7 @@ int webserver::finalize_answer(
 
                 map<details::http_endpoint, http_resource*>::iterator found_endpoint;
 
-                details::http_endpoint endpoint(st_url, false, false, regex_checking);
+                details::http_endpoint endpoint(st_url, false, false, false);
 
                 map<details::http_endpoint, http_resource*>::iterator it;
 
@@ -720,10 +729,10 @@ int webserver::finalize_answer(
     mr->dhrs->decorate_response(raw_response);
     to_ret = mr->dhrs->enqueue_response(connection, raw_response);
     MHD_destroy_response(raw_response);
-    return to_ret;
+    return (MHD_Result) to_ret;
 }
 
-int webserver::complete_request(
+MHD_Result webserver::complete_request(
         MHD_Connection* connection,
         struct details::modded_request* mr,
         const char* version,
@@ -739,7 +748,7 @@ int webserver::complete_request(
     return finalize_answer(connection, mr, method);
 }
 
-int webserver::answer_to_connection(void* cls, MHD_Connection* connection,
+MHD_Result webserver::answer_to_connection(void* cls, MHD_Connection* connection,
     const char* url, const char* method,
     const char* version, const char* upload_data,
     size_t* upload_data_size, void** con_cls

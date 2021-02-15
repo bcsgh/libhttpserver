@@ -24,13 +24,10 @@
 
 #ifndef _HTTP_RESPONSE_HPP_
 #define _HTTP_RESPONSE_HPP_
-#include <map>
-#include <utility>
-#include <string>
-#include <iosfwd>
-#include <stdint.h>
-#include <vector>
 
+#include <iosfwd>
+#include <map>
+#include <string>
 #include "httpserver/http_utils.hpp"
 
 struct MHD_Connection;

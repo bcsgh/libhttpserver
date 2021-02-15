@@ -18,7 +18,11 @@
      USA
 */
 
-#include "string_response.hpp"
+#include "httpserver/string_response.hpp"
+#include <microhttpd.h>
+#include <stddef.h>
+
+struct MHD_Response;
 
 using namespace std;
 

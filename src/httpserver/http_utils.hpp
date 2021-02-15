@@ -25,19 +25,42 @@
 #ifndef _HTTPUTILS_H_
 #define _HTTPUTILS_H_
 
-#include <microhttpd.h>
-#include <string>
-#include <cctype>
-#include <vector>
-#include <map>
-#include <algorithm>
-#include <exception>
-#include <iosfwd>
 #ifdef HAVE_GNUTLS
 #include <gnutls/gnutls.h>
 #endif
 
+// needed to force Vista as a bare minimum to have inet_ntop (libmicro defines
+// this to include XP support as a lower version).
+#if defined(__MINGW32__) || defined(__CYGWIN32__)
+#define _WINDOWS
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x600
+#endif
+
+// needed to have the fd_set definition ahead of microhttpd.h import
+#if defined(__CYGWIN__)
+#include <sys/select.h>
+#endif
+
+#include <microhttpd.h>
+#include <stddef.h>
+
+#if !defined(__MINGW32__)
+#include <sys/socket.h>
+#endif
+
+#include <algorithm>
+#include <cctype>
+#include <iosfwd>
+#include <map>
+#include <string>
+#include <vector>
+
 #define DEFAULT_MASK_VALUE 0xFFFF
+
+#if MHD_VERSION < 0x00097002
+typedef int MHD_Result;
+#endif
 
 namespace httpserver {
 
@@ -63,7 +86,7 @@ class http_utils
 
     enum start_method_T
     {
-#if defined(__MINGW32__) || defined(__CYGWIN32__)
+#if defined(__MINGW32__) || defined(__CYGWIN__)
     #ifdef ENABLE_POLL
         INTERNAL_SELECT = MHD_USE_SELECT_INTERNALLY | MHD_USE_POLL,
     #else

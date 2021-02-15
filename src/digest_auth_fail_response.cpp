@@ -18,7 +18,11 @@
      USA
 */
 
-#include "digest_auth_fail_response.hpp"
+#include "httpserver/digest_auth_fail_response.hpp"
+#include <microhttpd.h>
+
+struct MHD_Connection;
+struct MHD_Response;
 
 using namespace std;
 

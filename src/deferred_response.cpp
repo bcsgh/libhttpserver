@@ -18,7 +18,10 @@
      USA
 */
 
-#include "deferred_response.hpp"
+#include "httpserver/deferred_response.hpp"
+#include <microhttpd.h>
+
+struct MHD_Response;
 
 using namespace std;
 

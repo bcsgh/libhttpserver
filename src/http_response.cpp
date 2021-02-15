@@ -18,15 +18,11 @@
      USA
 */
 
-#include <cstdio>
-#include <functional>
+#include "httpserver/http_response.hpp"
+#include <microhttpd.h>
 #include <iostream>
-#include <sstream>
-#include <fcntl.h>
-#include <unistd.h>
-#include "http_utils.hpp"
-#include "webserver.hpp"
-#include "http_response.hpp"
+#include <utility>
+#include "httpserver/http_utils.hpp"
 
 using namespace std;
 

@@ -18,15 +18,11 @@
 
 */
 
-#include <stdlib.h>
+#include "httpserver/http_resource.hpp"
+#include <microhttpd.h>
+#include "httpserver/string_response.hpp"
 
-#include "http_resource.hpp"
-#include "http_utils.hpp"
-#include "http_request.hpp"
-#include "http_response.hpp"
-#include "webserver.hpp"
-#include "string_utilities.hpp"
-#include "string_response.hpp"
+namespace httpserver { class http_response; }
 
 using namespace std;
 

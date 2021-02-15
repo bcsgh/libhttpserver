@@ -18,8 +18,13 @@
      USA
 */
 
+#include "httpserver/file_response.hpp"
 #include <fcntl.h>
-#include "file_response.hpp"
+#include <microhttpd.h>
+#include <stddef.h>
+#include <unistd.h>
+
+struct MHD_Response;
 
 using namespace std;
 

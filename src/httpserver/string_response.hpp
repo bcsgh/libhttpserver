@@ -25,7 +25,12 @@
 #ifndef _STRING_RESPONSE_HPP_
 #define _STRING_RESPONSE_HPP_
 
+#include <string>
+#include <utility>
+#include "http_utils.hpp"
 #include "httpserver/http_response.hpp"
+
+struct MHD_Response;
 
 namespace httpserver
 {
@@ -36,12 +41,12 @@ class string_response : public http_response
         string_response() = default;
 
         explicit string_response(
-                const std::string& content,
+                std::string content,
                 int response_code = http::http_utils::http_ok,
                 const std::string& content_type = http::http_utils::text_plain
         ):
             http_response(response_code, content_type),
-            content(content)
+            content(std::move(content))
         {
         }
 

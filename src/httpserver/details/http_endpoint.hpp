@@ -25,11 +25,11 @@
 #ifndef _HTTP_ENDPOINT_HPP_
 #define _HTTP_ENDPOINT_HPP_
 
-#include <vector>
-#include <utility>
-#include <regex.h>
-#include <string>
+#include <regex>
 #include <stdexcept>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace httpserver
 {
@@ -120,12 +120,12 @@ class http_endpoint
             return chunk_positions;
         }
 
-        const bool is_family_url() const
+        bool is_family_url() const
         {
             return family_url;
         }
 
-        const bool is_regex_compiled() const
+        bool is_regex_compiled() const
         {
             return reg_compiled;
         }
@@ -136,6 +136,7 @@ class http_endpoint
         http_endpoint():
             url_complete("/"),
             url_normalized("/"),
+            re_url_normalized(std::regex("")), // initialize empty
             family_url(false),
             reg_compiled(false)
         {
@@ -155,7 +156,7 @@ class http_endpoint
         http_endpoint(const std::string& url,
                 bool family = false,
                 bool registration = false,
-                bool use_regex = true
+                bool use_regex = false
         );
     private:
         /**
@@ -186,7 +187,7 @@ class http_endpoint
         /**
          * Regex used in comparisons
         **/
-        regex_t re_url_normalized;
+        std::regex re_url_normalized;
 
         /**
          * Boolean indicating wheter the endpoint represents a family

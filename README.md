@@ -10,7 +10,8 @@ Copyright (C)  2011-2019  Sebastiano Merlino.
 
 # The libhttpserver reference manual
 
-[![Build Status](https://travis-ci.org/etr/libhttpserver.png?branch=master)](https://travis-ci.org/etr/libhttpserver)
+[![Build Status](https://api.travis-ci.com/etr/libhttpserver.svg?branch=master)](https://travis-ci.com/etr/libhttpserver)
+[![Build status](https://ci.appveyor.com/api/projects/status/ktoy6ewkrf0q1hw6/branch/master?svg=true)](https://ci.appveyor.com/project/etr/libhttpserver/branch/master)
 [![codecov](https://codecov.io/gh/etr/libhttpserver/branch/master/graph/badge.svg)](https://codecov.io/gh/etr/libhttpserver)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5fa4bdc3815b4c10977f3badefedecd6)](https://www.codacy.com/app/etr/libhttpserver?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=etr/libhttpserver&amp;utm_campaign=Badge_Grade)
 [![Gitter chat](https://badges.gitter.im/etr/libhttpserver.png)](https://gitter.im/libhttpserver/community)
@@ -52,7 +53,7 @@ libhttpserver is built upon  [libmicrohttpd](https://www.gnu.org/software/libmic
 
 #### Community
 * [Code of Conduct (on a separate page)](https://github.com/etr/libhttpserver/blob/master/CODE_OF_CONDUCT.md)
-* [Contributing (on a separate page)](https://github.com/etr/libhttpserver/blob/master/CODE_OF_CONDUCT.md) 
+* [Contributing (on a separate page)](https://github.com/etr/libhttpserver/blob/master/CONTRIBUTING.md) 
 
 #### Appendices
 * [Copying statement](#copying)
@@ -75,19 +76,23 @@ Additionally, clients can specify resource limits on the overall number of conne
 [Back to TOC](#table-of-contents)
 
 ## Requirements
-libhttpserver can be used without any dependencies aside for libmicrohttpd.
+libhttpserver can be used without any dependencies aside from libmicrohttpd.
 
 The minimum versions required are:
-* g++ >= 4.8.4 or clang-3.6
+* g++ >= 5.5.0 or clang-3.6
 * libmicrohttpd >= 0.9.52
 * [Optionally]: for TLS (HTTPS) support, you'll need [libgnutls](http://www.gnutls.org/).
 * [Optionally]: to compile the code-reference, you'll need [doxygen](http://www.doxygen.nl/).
 
 Additionally, for MinGW on windows you will need:
 * libwinpthread (For MinGW-w64, if you use thread model posix then you have this)
+
+For versions before 0.18.0, on MinGW, you will need:
 * libgnurx >= 2.5.1
 
 Furthermore, the testcases use [libcurl](http://curl.haxx.se/libcurl/) but you don't need it to compile the library.
+
+Please refer to the readme file for your particular distribution if there is one for important notes.
 
 [Back to TOC](#table-of-contents)
 
@@ -183,6 +188,7 @@ For example, if your connection limit is “1”, a browser may open a first con
 * _.bind_socket(**int** socket_fd):_ Listen socket to use. Pass a listen socket for the daemon to use (systemd-style). If this option is used, the daemon will not open its own listen socket(s). The argument passed must be of type "int" and refer to an existing socket that has been bound to a port and is listening.
 * _.max_thread_stack_size(**int** stack_size):_ Maximum stack size for threads created by the library. Not specifying this option or using a value of zero means using the system default (which is likely to differ based on your platform). Default is `0 (system default)`.
 * _.use_ipv6() and .no_ipv6():_ Enable or disable the IPv6 protocol support (by default, libhttpserver will just support IPv4). If you specify this and the local platform does not support it, starting up the server will throw an exception. `off` by default.
+* _.use_dual_stack() and .no_dual_stack():_ Enable or disable the support for both IPv6 and IPv4 protocols at the same time (by default, libhttpserver will just support IPv4). If you specify this and the local platform does not support it, starting up the server will throw an exception. Note that this will mean that IPv4 addresses are returned in the IPv6-mapped format (the ’structsockaddrin6’ format will be used for IPv4 and IPv6). `off` by default.
 * _.pedantic() and .no_pedantic():_ Enables pedantic checks about the protocol (as opposed to as tolerant as possible). Specifically, at the moment, this flag causes the library to reject HTTP 1.1 connections without a `Host` header. This is required by the standard, but of course in violation of the “be as liberal as possible in what you accept” norm. It is recommended to turn this **off** if you are testing clients against the library, and **on** in production. `off` by default.
 * _.debug() and .no_debug():_ Enables debug messages from the library. `off` by default.
 * _.regex_checking() and .no_regex_checking():_ Enables pattern matching for endpoints. Read more [here](#registering-resources). `on` by default.
@@ -1888,7 +1894,7 @@ to permit their use in free software.
 
 This library has been originally developed under the zencoders flags and this community has always supported me all along this work so I am happy to put the logo on this readme.
 
-            When you see this tree, know that you've came across ZenCoders.org
+              When you see this tree, know that you've came across ZenCoders
     
                                    with open('ZenCoders.                            
                              `num` in numbers   synchronized                        
@@ -1932,7 +1938,7 @@ This library has been originally developed under the zencoders flags and this co
                                  010010010010110101001010
 
 For further information:
-visit our website www.zencoders.org
+visit our website https://zencoders.github.io
 
 **Author:** Sebastiano Merlino
 

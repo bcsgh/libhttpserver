@@ -25,24 +25,22 @@
 #ifndef _HTTP_REQUEST_HPP_
 #define _HTTP_REQUEST_HPP_
 
+#include <microhttpd.h>
+
+#include <stddef.h>
+#include <algorithm>
+#include <iosfwd>
 #include <map>
-#include <vector>
 #include <string>
 #include <utility>
-#include <iosfwd>
+#include <vector>
+
+#include "httpserver/http_utils.hpp"
 
 struct MHD_Connection;
 
 namespace httpserver
 {
-
-class webserver;
-
-namespace http
-{
-    class header_comparator;
-    class arg_comparator;
-};
 
 /**
  * Class representing an abstraction for an Http Request. It is used from classes using these apis to receive information through http protocol.
@@ -245,15 +243,15 @@ class http_request
 
         unescaper_ptr unescaper = 0x0;
 
-        static int build_request_header(void *cls, enum MHD_ValueKind kind,
+        static MHD_Result build_request_header(void *cls, enum MHD_ValueKind kind,
                 const char *key, const char *value
         );
 
-        static int build_request_args(void *cls, enum MHD_ValueKind kind,
+        static MHD_Result build_request_args(void *cls, enum MHD_ValueKind kind,
                 const char *key, const char *value
         );
 
-        static int build_request_querystring(void *cls, enum MHD_ValueKind kind,
+        static MHD_Result build_request_querystring(void *cls, enum MHD_ValueKind kind,
                 const char *key, const char *value
         );
 

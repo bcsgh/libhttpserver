@@ -30,37 +30,32 @@
 #define NOT_METHOD_ERROR "Method not Acceptable"
 #define GENERIC_ERROR "Internal Error"
 
-#include <cstring>
+#include <microhttpd.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#if !defined(__MINGW32__)
+#include <sys/socket.h>
+#endif
+
 #include <map>
-#include <vector>
+#include <memory>
 #include <set>
 #include <string>
-#include <utility>
-#include <stdlib.h>
-#include <memory>
-#include <deque>
 
-#include <pthread.h>
-#include <stdexcept>
-
+#include "http_utils.hpp"
 #include "httpserver/create_webserver.hpp"
-#include "httpserver/http_response.hpp"
+#include "httpserver/details/http_endpoint.hpp"
 
-#include "details/http_endpoint.hpp"
+namespace httpserver { class http_resource; }
+namespace httpserver { class http_response; }
+namespace httpserver { namespace details { struct modded_request; } }
+
+struct MHD_Connection;
 
 namespace httpserver {
-
-class http_resource;
-class create_webserver;
-
-namespace http {
-struct ip_representation;
-struct httpserver_ska;
-};
-
-namespace details {
-    struct modded_request;
-}
 
 /**
  * Class representing the webserver. Main class of the apis.
@@ -156,6 +151,7 @@ class webserver
         const int max_thread_stack_size;
         const bool use_ssl;
         const bool use_ipv6;
+        const bool use_dual_stack;
         const bool debug;
         const bool pedantic;
         const std::string https_mem_key;
@@ -176,7 +172,6 @@ class webserver
         bool single_resource;
         bool tcp_nodelay;
         pthread_mutex_t mutexwait;
-        pthread_rwlock_t runguard;
         pthread_cond_t mutexcond;
         render_ptr not_found_resource;
         render_ptr method_not_allowed_resource;
@@ -198,14 +193,14 @@ class webserver
                 enum MHD_RequestTerminationCode toe
         );
 
-        static int answer_to_connection
+        static MHD_Result answer_to_connection
         (
             void* cls, MHD_Connection* connection,
             const char* url, const char* method,
             const char* version, const char* upload_data,
             size_t* upload_data_size, void** con_cls
         );
-        static int post_iterator
+        static MHD_Result post_iterator
         (
             void *cls,
             enum MHD_ValueKind kind,
@@ -222,25 +217,25 @@ class webserver
             void **con_cls, int upgrade_socket
         );
 
-        int requests_answer_first_step(MHD_Connection* connection,
+        MHD_Result requests_answer_first_step(MHD_Connection* connection,
                 struct details::modded_request* mr
         );
 
-        int requests_answer_second_step(MHD_Connection* connection,
+        MHD_Result requests_answer_second_step(MHD_Connection* connection,
             const char* method, const char* version, const char* upload_data,
             size_t* upload_data_size, struct details::modded_request* mr
         );
 
-        int finalize_answer(MHD_Connection* connection,
+        MHD_Result finalize_answer(MHD_Connection* connection,
                 struct details::modded_request* mr, const char* method
         );
 
-        int complete_request(MHD_Connection* connection,
+        MHD_Result complete_request(MHD_Connection* connection,
                 struct details::modded_request* mr,
                 const char* version, const char* method
         );
 
-        friend int policy_callback (void *cls,
+        friend MHD_Result policy_callback (void *cls,
                 const struct sockaddr* addr, socklen_t addrlen
         );
         friend void error_log(void* cls, const char* fmt, va_list ap);

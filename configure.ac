@@ -21,8 +21,8 @@
 
 AC_PREREQ(2.57)
 m4_define([libhttpserver_MAJOR_VERSION],[0])dnl
-m4_define([libhttpserver_MINOR_VERSION],[17])dnl
-m4_define([libhttpserver_REVISION],[5])dnl
+m4_define([libhttpserver_MINOR_VERSION],[18])dnl
+m4_define([libhttpserver_REVISION],[1])dnl
 m4_define([libhttpserver_PKG_VERSION],[libhttpserver_MAJOR_VERSION.libhttpserver_MINOR_VERSION.libhttpserver_REVISION])dnl
 m4_define([libhttpserver_LDF_VERSION],[libhttpserver_MAJOR_VERSION:libhttpserver_MINOR_VERSION:libhttpserver_REVISION])dnl
 AC_INIT([libhttpserver], libhttpserver_PKG_VERSION, [electrictwister2000@gmail.com])
@@ -64,17 +64,17 @@ NETWORK_LIBS=""
 case "$host" in
     *-mingw*)
         NETWORK_HEADER="winsock2.h"
-        REGEX_LIBS="-lregex -lpthread -no-undefined"
+        ADDITIONAL_LIBS="-lpthread -no-undefined"
         NETWORK_LIBS="-lws2_32"
         native_srcdir=$(cd $srcdir; pwd -W)
         ;;
     *-cygwin*)
-        NETWORK_HEADER="winsock2.h"
-        REGEX_LIBS="-lregex -lpthread -no-undefined"
+        NETWORK_HEADER="arpa/inet.h"
+        ADDITIONAL_LIBS="-lpthread -no-undefined"
         ;;
     *)
         NETWORK_HEADER="arpa/inet.h"
-        REGEX_LIBS=""
+        ADDITIONAL_LIBS=""
         is_windows=no
         ;;
 esac
@@ -86,7 +86,6 @@ AC_CHECK_HEADER([inttypes.h],[],[AC_MSG_ERROR("inttypes.h not found")])
 AC_CHECK_HEADER([errno.h],[],[AC_MSG_ERROR("errno.h not found")])
 AC_CHECK_HEADER([unistd.h],[],[AC_MSG_ERROR("unistd.h not found")])
 AC_CHECK_HEADER([ctype.h],[],[AC_MSG_ERROR("cctype not found")])
-AC_CHECK_HEADER([regex.h],[],[AC_MSG_ERROR("regex.h not found")])
 AC_CHECK_HEADER([sys/stat.h],[],[AC_MSG_ERROR("sys/stat.h not found")])
 AC_CHECK_HEADER([sys/types.h],[],[AC_MSG_ERROR("sys/types.h not found")])
 AC_CHECK_HEADER([$NETWORK_HEADER],[],[AC_MSG_ERROR("$NETWORK_HEADER not found")])
@@ -117,7 +116,7 @@ if test x"$host" = x"$build"; then
     )
 
     CXXFLAGS="-std=c++11 -DHTTPSERVER_COMPILATION -D_REENTRANT $LIBMICROHTTPD_CFLAGS $CXXFLAGS"
-    LDFLAGS="$LIBMICROHTTPD_LIBS $NETWORK_LIBS $REGEX_LIBS $LDFLAGS"
+    LDFLAGS="$LIBMICROHTTPD_LIBS $NETWORK_LIBS $ADDITIONAL_LIBS $LDFLAGS"
 
     cond_cross_compile="no"
 else
@@ -130,7 +129,7 @@ else
     )
 
     CXXFLAGS="-std=c++11 -DHTTPSERVER_COMPILATION -D_REENTRANT $CXXFLAGS"
-    LDFLAGS="$NETWORK_LIBS $REGEX_LIBS $LDFLAGS"
+    LDFLAGS="$NETWORK_LIBS $ADDITIONAL_LIBS $LDFLAGS"
 
     cond_cross_compile="yes"
 fi
@@ -285,6 +284,9 @@ case $host_os in
         AM_CXXFLAGS="$AM_CXXFLAGS -DDARWIN"
         AM_CFLAGS="$AM_CFLAGS -DDARWIN"
         ;;
+    freebsd* )
+        AM_LDFLAGS=""
+        ;;
 esac
 
 AC_MSG_CHECKING([whether to build with coverage information])
@@ -344,14 +346,14 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(EXT_LIB_PATH)
 AC_SUBST(EXT_LIBS)
 
-AC_CONFIG_LINKS([test/test_content:test/test_content])
-AC_CONFIG_LINKS([test/cert.pem:test/cert.pem])
-AC_CONFIG_LINKS([test/key.pem:test/key.pem])
-AC_CONFIG_LINKS([test/test_root_ca.pem:test/test_root_ca.pem])
-AC_CONFIG_LINKS([test/libhttpserver.supp:test/libhttpserver.supp])
-AC_CONFIG_LINKS([examples/cert.pem:examples/cert.pem])
-AC_CONFIG_LINKS([examples/key.pem:examples/key.pem])
-AC_CONFIG_LINKS([examples/test_content:examples/test_content])
+AC_CONFIG_FILES([test/test_content:test/test_content])
+AC_CONFIG_FILES([test/cert.pem:test/cert.pem])
+AC_CONFIG_FILES([test/key.pem:test/key.pem])
+AC_CONFIG_FILES([test/test_root_ca.pem:test/test_root_ca.pem])
+AC_CONFIG_FILES([test/libhttpserver.supp:test/libhttpserver.supp])
+AC_CONFIG_FILES([examples/cert.pem:examples/cert.pem])
+AC_CONFIG_FILES([examples/key.pem:examples/key.pem])
+AC_CONFIG_FILES([examples/test_content:examples/test_content])
 
 AC_OUTPUT(
       libhttpserver.pc

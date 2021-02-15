@@ -18,10 +18,11 @@
      USA
 */
 
-#include "littletest.hpp"
-#include "string_utilities.hpp"
+#include "httpserver/string_utilities.hpp"
 
 #include <cstdio>
+
+#include "littletest.hpp"
 
 using namespace httpserver;
 using namespace std;
@@ -91,11 +92,6 @@ LT_BEGIN_AUTO_TEST(string_utilities_suite, split_string_end_space)
 
     LT_CHECK_COLLECTIONS_EQ(expected.begin(), expected.end(), actual.begin());
 LT_END_AUTO_TEST(split_string_end_space)
-
-LT_BEGIN_AUTO_TEST(string_utilities_suite, regex_replace)
-    LT_CHECK_EQ(string_utilities::regex_replace("test///message", "(\\/)+", "/"), "test/message");
-    LT_CHECK_EQ(string_utilities::regex_replace("test 1234 message", "([0-9])+", "bob"), "test bob message");
-LT_END_AUTO_TEST(regex_replace)
 
 LT_BEGIN_AUTO_TEST_ENV()
     AUTORUN_TESTS()
